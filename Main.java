@@ -3,6 +3,7 @@ import java.util.Random;
 public class Main {
     static int MAXIMO_TEMPO_EXECUCAO = 65535;
     static int n_processos = 3;
+    static Scanner teclado = new Scanner (System.in);
 
     public static void main(String[] args) {
         int[] tempo_execucao = new int[n_processos];
@@ -10,39 +11,42 @@ public class Main {
         int[] prioridade = new int[n_processos];
         int[] tempo_espera = new int[n_processos];
         int[] tempo_restante = new int[n_processos];
-        Scanner teclado = new Scanner (System.in);
-        popular_processos(tempo_execucao, tempo_espera, tempo_restante, tempo_chegada, prioridade);
+
+        System.out.print("1 - Sim \n2 - Não \nSerá aleatório?  ");
+        int aleatorio =  teclado.nextInt();
+
+        popular_processos(tempo_execucao, tempo_espera, tempo_restante, tempo_chegada, prioridade, aleatorio);
         imprime_processos(tempo_execucao, tempo_espera, tempo_restante, tempo_chegada, prioridade);
 
         //Escolher algoritmo
         int alg;
         while(true) {
-            System.out.print("Escolha o argoritmo?: [1=FCFS 2=SJF Preemptivo 3=SJF Não Preemptivo  4=Prioridade Preemptivo 5=Prioridade Não Preemptivo  6=Round_Robin  7=Imprime lista de processos 8=Popular processos novamente 9=Sair]: ");
+            System.out.print("\n1 - FCFS \n2 - SJF Preemptivo \n3 - SJF Não Preemptivo  \n4 - Prioridade Preemptivo \n5 - Prioridade Não Preemptivo  \n6 - Round Robin  \n7 - Imprime lista de processos \n8 - Popular processos novamente \n9 - Sair \nEscolha um algoritmo: ");
             alg =  teclado.nextInt();
 
             if (alg == 1) { //FCFS
                 FCFS(tempo_execucao, tempo_espera, tempo_restante, tempo_chegada);
             }
             else if (alg == 2) { //SJF PREEMPTIVO
-                SJF(true, tempo_execucao, tempo_espera, tempo_restante, tempo_chegada, prioridade);
+                SJF(tempo_execucao, tempo_espera, tempo_restante, tempo_chegada);
             }
             else if (alg == 3) { //SJF NÃO PREEMPTIVO
-                SJF(false, tempo_execucao, tempo_espera, tempo_restante, tempo_chegada, prioridade);
+                SJFN(tempo_execucao, tempo_espera, tempo_restante, tempo_chegada);
             }
             else if (alg == 4) { //PRIORIDADE PREEMPTIVO
-                PRIORIDADE(true, tempo_execucao, tempo_espera, tempo_restante, tempo_chegada, prioridade);
+                PRIORIDADE(tempo_execucao, tempo_espera, tempo_restante, tempo_chegada, prioridade);
             }
             else if (alg == 5) { //PRIORIDADE NÃO PREEMPTIVO
-                PRIORIDADE(false, tempo_execucao, tempo_espera, tempo_restante, tempo_chegada, prioridade);
+                PRIORIDADEN(tempo_execucao, tempo_espera, tempo_restante, tempo_chegada, prioridade);
             }
             else if (alg == 6) { //Round_Robin
-                Round_Robin(tempo_execucao, tempo_espera, tempo_restante);
+                ROUNDROBIN(tempo_execucao, tempo_espera, tempo_restante, tempo_chegada);
             }
             else if (alg == 7) { //IMPRIME CONTEÚDO INICIAL DOS PROCESSOS
                 imprime_processos(tempo_execucao, tempo_espera, tempo_restante, tempo_chegada, prioridade);
             }
             else if (alg == 8) { //REATRIBUI VALORES INICIAIS
-                popular_processos(tempo_execucao, tempo_espera, tempo_restante, tempo_chegada, prioridade);
+                popular_processos(tempo_execucao, tempo_espera, tempo_restante, tempo_chegada, prioridade, aleatorio);
                 imprime_processos(tempo_execucao, tempo_espera, tempo_restante, tempo_chegada, prioridade);
             }
             else if (alg == 9) {
@@ -50,12 +54,9 @@ public class Main {
             }
         }
     }
-    public static void popular_processos(int[] tempo_execucao, int[] tempo_espera, int[] tempo_restante, int[] tempo_chegada,  int [] prioridade ){
+    public static void popular_processos(int[] tempo_execucao, int[] tempo_espera, int[] tempo_restante, int[] tempo_chegada,  int [] prioridade, int aleatorio ){
         Random random = new Random();
         Scanner teclado = new Scanner (System.in);
-        int aleatorio;
-        System.out.print("Será aleatório?:  ");
-        aleatorio =  teclado.nextInt();
 
         for (int i = 0; i < n_processos; i++) {
             //Popular Processos Aleatorio
@@ -91,24 +92,18 @@ public class Main {
             tempo_espera_total = tempo_espera_total + tempo_espera[i];
         }
         System.out.println("Tempo médio de espera: "+(tempo_espera_total/n_processos));
-
     }
-
     public static void FCFS(int[] execucao, int[] espera, int[] restante, int[] chegada){
         int[] tempo_execucao = execucao.clone();
         int[] tempo_espera = espera.clone();
         int[] tempo_restante = restante.clone();
         //int[] tempo_chegada = chegada.clone();
-
         int processo_em_execucao = 0; //processo inicial no FIFO é o zero
-
         //implementar código do FCFS
         for (int i=1; i<MAXIMO_TEMPO_EXECUCAO; i++) {
             System.out.println("tempo["+i+"]: processo["+processo_em_execucao+"] restante="+tempo_restante[processo_em_execucao]);
-
             if (tempo_execucao[processo_em_execucao] == tempo_restante[processo_em_execucao])
                 tempo_espera[processo_em_execucao] = i-1;
-
             if (tempo_restante[processo_em_execucao] == 1) {
                 if (processo_em_execucao == (n_processos-1))
                     break;
@@ -117,120 +112,199 @@ public class Main {
             }
             else
                 tempo_restante[processo_em_execucao]--;
-
         }
         //
-
         imprime_stats(tempo_espera);
     }
 
-    public static void SJF(boolean preemptivo, int[] execucao, int[] espera, int[] restante, int[] chegada, int[] prioridade){
+    public static void SJF(int[] execucao, int[] espera, int[] restante, int[] chegada) {
         int[] tempo_execucao = execucao.clone();
         int[] tempo_espera = espera.clone();
         int[] tempo_restante = restante.clone();
         int[] tempo_chegada = chegada.clone();
-        int[] prioridade_temp = prioridade.clone();
-
-        int n_processos = tempo_execucao.length; // Obter o número de processos
 
         int tempo_atual = 0;
-        int processo_atual = -1;
-        int menor_tempo_execucao = MAXIMO_TEMPO_EXECUCAO + 1;
+        int processos_completos = 0;
+
+        while (processos_completos < n_processos) {
+            int menor_tempo_execucao = Integer.MAX_VALUE;
+            int processo_menor_tempo = -1;
+            for (int i = 0; i < n_processos; i++) {
+                if (tempo_chegada[i] <= tempo_atual && tempo_restante[i] < menor_tempo_execucao && tempo_restante[i] > 0) {
+                    menor_tempo_execucao = tempo_restante[i];
+                    processo_menor_tempo = i;
+                }
+            }
+            if (processo_menor_tempo == -1) {
+                System.out.println("tempo[" + tempo_atual + "]: Nenhum processo está pronto");
+                tempo_atual++;
+                continue;
+            }
+            tempo_restante[processo_menor_tempo]--;
+            System.out.println("tempo[" + tempo_atual + "]: Processo[" + processo_menor_tempo + "] restante=" + tempo_restante[processo_menor_tempo]);
+
+            if (tempo_restante[processo_menor_tempo] == 0) {
+                processos_completos++;
+
+                int tempo_espera_processo = tempo_atual - tempo_execucao[processo_menor_tempo] + 1 - tempo_chegada[processo_menor_tempo];
+                tempo_espera[processo_menor_tempo] = tempo_espera_processo >= 0 ? tempo_espera_processo : 0;
+            }
+            tempo_atual++;
+        }
+        imprime_stats(tempo_espera);
+    }
+
+    public static void SJFN(int[] execucao, int[] espera, int[] restante, int[] chegada) {
+        int[] tempo_execucao = execucao.clone();
+        int[] tempo_espera = espera.clone();
+        int[] tempo_restante = restante.clone();
+        int[] tempo_chegada = chegada.clone();
+
+        int n_processos = tempo_execucao.length;
+        int tempo_atual = 0;
         boolean[] processo_executado = new boolean[n_processos];
 
         while (true) {
-            processo_atual = -1;
-            menor_tempo_execucao = MAXIMO_TEMPO_EXECUCAO + 1;
-
-            // Encontra o próximo processo a ser executado
+            int processo_atual = -1;
+            int menor_tempo_execucao = MAXIMO_TEMPO_EXECUCAO + 1;
             for (int i = 0; i < n_processos; i++) {
                 if (!processo_executado[i] && tempo_chegada[i] <= tempo_atual && tempo_execucao[i] < menor_tempo_execucao) {
                     processo_atual = i;
                     menor_tempo_execucao = tempo_execucao[i];
                 }
             }
-
-            // Se não há mais processos a executar, sai do loop
-            if (processo_atual == -1)
-                break;
-
-            // Se o algoritmo é preemptivo, decrementa o tempo restante do processo atual
-            if (preemptivo) {
+            if (processo_atual == -1) {
+                System.out.println("tempo[" + tempo_atual + "]: Nenhum processo está pronto");
+                tempo_atual++;
+                continue;
+            }
+            while (tempo_restante[processo_atual] > 0) {
                 tempo_restante[processo_atual]--;
-
-                // Se o processo atual terminou sua execução, atualiza o tempo de espera
+                System.out.println("tempo[" + tempo_atual + "]: Processo[" + processo_atual + "] restante=" + tempo_restante[processo_atual]);
                 if (tempo_restante[processo_atual] == 0) {
                     tempo_espera[processo_atual] = tempo_atual + 1 - tempo_execucao[processo_atual] - tempo_chegada[processo_atual];
                     processo_executado[processo_atual] = true;
-                }
-            } else { // Se não é preemptivo, executa o processo até o fim
-                int[] tempo_espera_temp = new int[n_processos];
-                int tempo_global = 0;
-
-                while (true) {
-                    int proximo_processo = -1;
-                    int menor_tempo_executa = Integer.MAX_VALUE;
-
-                    // Encontra o próximo processo a ser executado
-                    for (int i = 0; i < n_processos; i++) {
-                        if (!processo_executado[i] && tempo_chegada[i] <= tempo_global && tempo_execucao[i] < menor_tempo_executa) {
-                            proximo_processo = i;
-                            menor_tempo_executa = tempo_execucao[i];
-                        }
-                    }
-
-                    // Se não houver mais processos a executar, sai do loop
-                    if (proximo_processo == -1)
-                        break;
-
-                    // Calcula o tempo de espera do processo antes de começar a execução
-                    tempo_espera_temp[proximo_processo] = tempo_global - tempo_chegada[proximo_processo];
-
-                    // Executa o processo até o fim
-                    tempo_global += tempo_execucao[proximo_processo];
-                    // Marca o processo como executado
-                    processo_executado[proximo_processo] = true;
-                }
-
-                // Copia os tempos de espera temporários para o array final
-                for (int i = 0; i < n_processos; i++) {
-                    tempo_espera[i] = tempo_espera_temp[i];
+                } else {
+                    tempo_atual++;
                 }
             }
-
-            // Avança o tempo atual
             tempo_atual++;
+            boolean todos_completos = true;
+            for (int i = 0; i < n_processos; i++) {
+                if (!processo_executado[i]) {
+                    todos_completos = false;
+                    break;
+                }
+            }
+            if (todos_completos) {
+                break;
+            }
         }
-
         imprime_stats(tempo_espera);
     }
 
-
-    public static void PRIORIDADE(boolean preemptivo, int[] execucao, int[] espera, int[] restante, int[] chegada, int[] prioridade){
+    public static void PRIORIDADE(int[] execucao, int[] espera, int[] restante, int[] chegada, int[] prioridade) {
         int[] tempo_execucao = execucao.clone();
         int[] tempo_espera = espera.clone();
         int[] tempo_restante = restante.clone();
         int[] tempo_chegada = chegada.clone();
-        int[] prioridade_temp = prioridade.clone();
+        int[] prioridades = prioridade.clone();
+        int n_processos = tempo_execucao.length;
 
-        //implementar código do Prioridade preemptivo e não preemptivo
-        //...
-        //
+        int tempo_atual = 0;
+        boolean[] processo_executado = new boolean[n_processos];
 
+        while (true) {
+            int processo_atual = -1;
+            int maior_prioridade = Integer.MIN_VALUE;
+            for (int i = 0; i < n_processos; i++) {
+                if (!processo_executado[i] && tempo_chegada[i] <= tempo_atual && prioridades[i] > maior_prioridade) {
+                    processo_atual = i;
+                    maior_prioridade = prioridades[i];
+                }
+            }
+            if (processo_atual == -1) {
+                System.out.println("tempo[" + tempo_atual + "]: Nenhum processo está pronto");
+                tempo_atual++;
+                continue;
+            }
+            tempo_restante[processo_atual]--;
+            System.out.println("tempo[" + tempo_atual + "]: Processo[" + processo_atual + "] restante=" + tempo_restante[processo_atual]);
+            if (tempo_restante[processo_atual] == 0) {
+                tempo_espera[processo_atual] = tempo_atual + 1 - tempo_execucao[processo_atual] - tempo_chegada[processo_atual];
+                processo_executado[processo_atual] = true;
+            }
+            tempo_atual++;
+            boolean todos_completos = true;
+            for (boolean executado : processo_executado) {
+                if (!executado) {
+                    todos_completos = false;
+                    break;
+                }
+            }
+            if (todos_completos) {
+                break;
+            }
+        }
         imprime_stats(tempo_espera);
-
     }
 
-    public static void Round_Robin(int[] execucao, int[] espera, int[] restante){
+    public static void PRIORIDADEN(int[] execucao, int[] espera, int[] restante, int[] chegada, int[] prioridade) {
         int[] tempo_execucao = execucao.clone();
         int[] tempo_espera = espera.clone();
         int[] tempo_restante = restante.clone();
+        int[] tempo_chegada = chegada.clone();
+        int[] prioridades = prioridade.clone();
+        int n_processos = tempo_execucao.length;
 
+        int tempo_atual = 0;
+        boolean[] processo_executado = new boolean[n_processos];
 
-        //implementar código do Round-Robin
-        //...
-        //
-
+        while (true) {
+            int processo_atual = -1;
+            int maior_prioridade = Integer.MIN_VALUE;
+            int menor_tempo_restante = Integer.MAX_VALUE;
+            for (int i = 0; i < n_processos; i++) {
+                if (!processo_executado[i] && tempo_chegada[i] <= tempo_atual && prioridades[i] > maior_prioridade) {
+                    processo_atual = i;
+                    maior_prioridade = prioridades[i];
+                    menor_tempo_restante = tempo_restante[i];
+                } else if (!processo_executado[i] && tempo_chegada[i] <= tempo_atual && prioridades[i] == maior_prioridade && tempo_restante[i] < menor_tempo_restante) {
+                    processo_atual = i;
+                    menor_tempo_restante = tempo_restante[i];
+                }
+            }
+            if (processo_atual == -1) {
+                System.out.println("tempo[" + tempo_atual + "]: Nenhum processo está pronto");
+                tempo_atual++;
+                continue;
+            }
+            while (tempo_restante[processo_atual] > 0) {
+                tempo_restante[processo_atual]--;
+                System.out.println("tempo[" + tempo_atual + "]: Processo[" + processo_atual + "] restante=" + tempo_restante[processo_atual]);
+                tempo_atual++;
+            }
+            tempo_espera[processo_atual] = tempo_atual - tempo_execucao[processo_atual] - tempo_chegada[processo_atual];
+            processo_executado[processo_atual] = true;
+            boolean todos_completos = true;
+            for (boolean executado : processo_executado) {
+                if (!executado) {
+                    todos_completos = false;
+                    break;
+                }
+            }
+            if (todos_completos) {
+                break;
+            }
+        }
         imprime_stats(tempo_espera);
+    }
+
+    public static void ROUNDROBIN(int[] execucao, int[] espera, int[] restante, int[] chegada) {
+        int[] tempo_execucao = execucao.clone();
+        int[] tempo_espera = espera.clone();
+        int[] tempo_restante = restante.clone();
+        int[] tempo_chegada = chegada.clone();
+
     }
 }
