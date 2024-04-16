@@ -40,7 +40,7 @@ public class Main {
                 PRIORIDADEN(tempo_execucao, tempo_espera, tempo_restante, tempo_chegada, prioridade);
             }
             else if (alg == 6) { //Round_Robin
-                ROUNDROBIN(tempo_execucao, tempo_espera, tempo_restante, tempo_chegada);
+                ROUNDROBIN(tempo_execucao, tempo_espera, tempo_restante);
             }
             else if (alg == 7) { //IMPRIME CONTEÚDO INICIAL DOS PROCESSOS
                 imprime_processos(tempo_execucao, tempo_espera, tempo_restante, tempo_chegada, prioridade);
@@ -300,11 +300,59 @@ public class Main {
         imprime_stats(tempo_espera);
     }
 
-    public static void ROUNDROBIN(int[] execucao, int[] espera, int[] restante, int[] chegada) {
+    public static void ROUNDROBIN(int[] execucao, int[] espera, int[] restante) {
         int[] tempo_execucao = execucao.clone();
         int[] tempo_espera = espera.clone();
         int[] tempo_restante = restante.clone();
-        int[] tempo_chegada = chegada.clone();
 
+        Scanner scanner = new Scanner(System.in);
+        Random random = new Random();
+
+        System.out.println();
+        System.out.print("1 - Sim \n2 - Não \nTime-slice será aleatório? ");
+        int opcao = scanner.nextInt();
+        int quantum = 0;
+        if (opcao == 1) {
+            quantum = random.nextInt(10) + 1;
+            System.out.println("Time-slice: " + quantum);
+        } else {
+            System.out.print("Digite o time-slice desejado: ");
+            quantum = scanner.nextInt();
+        }
+
+        int n_processos = tempo_execucao.length;
+        int tempo_atual = 0;
+        int[] tempos_espera_processo = new int[n_processos];
+        boolean[] processo_concluido = new boolean[n_processos];
+
+        while (true) {
+            boolean todos_concluidos = true;
+            for (int i = 0; i < n_processos; i++) {
+                if (tempo_restante[i] > 0) {
+                    todos_concluidos = false;
+                    for (int j = 0; j < quantum; j++) {
+                        if (tempo_restante[i] == 0) {
+                            break;
+                        }
+                        tempo_restante[i]--;
+                        System.out.println("tempo[" + tempo_atual + "]: Processo[" + i + "] restante=" + tempo_restante[i]);
+                        tempo_atual++;
+                        for (int k = 0; k < n_processos; k++) {
+                            if (k != i && !processo_concluido[k] && tempo_restante[k] > 0) {
+                                tempos_espera_processo[k]++;
+                            }
+                        }
+                    }
+                    if (tempo_restante[i] == 0) {
+                        processo_concluido[i] = true;
+                        tempo_espera[i] = tempos_espera_processo[i];
+                    }
+                }
+            }
+            if (todos_concluidos) {
+                break;
+            }
+        }
+        imprime_stats(tempo_espera);
     }
 }
